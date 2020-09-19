@@ -2,6 +2,7 @@ library(AppliedPredictiveModeling)
 library(caret)
 library(corrplot)
 library(e1071)
+library(GGally)
 library(ggpubr)
 library(mlbench)
 library(RColorBrewer)
@@ -65,10 +66,68 @@ ggarrange(ri_plot, na_plot, mg_plot, al_plot, si_plot, k_plot, ca_plot, ba_plot,
 apply(clean_glass, 2, skewness)
 
 #next is a correlation matrix to show the relationships between predictors
-corrplot(cor(clean_glass), method = "number", type = "upper", col = brewer.pal(n=8, name="RdYlBu"))
+corrplot(cor(clean_glass), 
+         method = "number", 
+         type = "upper", 
+         order = "hclust", 
+         col = brewer.pal(n=8, name="RdYlBu"), 
+         title = "Predictor Correlation Matrix",
+         mar=c(0,0,1,0))
 
 #as for transformations, all predictors except for Na would benefit from a transformation as they are moderately or highly skewed
-#do I need to know which transformation for each predictor?
+#We will use boxcox and PCA to transform the data
+glass_1 <- dirty_glass
+glass_2 <- dirty_glass
+box_transformation <- predict(preProcess(glass_1, method = c("center", "scale", "BoxCox")), glass_1)
+pca_transformation <- predict(preProcess(glass_2, method = c("center", "scale", "pca")), glass_2)
+
+dirty_glass$type <- type
+box_transformation$type <- type
+pca_transformation$type <- type
+
+#and now for visualizing the transformations along with correlation matrices for further comparison
+ggpairs(dirty_glass, 
+        columns = 1:9,
+        ggplot2::aes(color = type),
+        upper = list(continuous='blank'),
+        legend=1,
+        title = "Data Before Transformations")
+ggplot(box_transformation, aes(x=Al, y=Si)) +
+    ggpairs(box_transformation, 
+            columns = 1:9,
+            ggplot2::aes(color = type),
+            upper = list(continuous='blank'),
+            legend=1,
+            title = "BoxCox Transformation")
+ggpairs(pca_transformation, 
+        columns = 2:7,
+        ggplot2::aes(color = type),
+        upper = list(continuous='blank'),
+        legend=1,
+        title = "PCA Transformation")
+
+corrplot(cor(dirty_glass[,1:9]), 
+         method = "number", 
+         type = "upper", 
+         order = "hclust", 
+         col = brewer.pal(n=8, name="RdYlBu"),
+         title = "Predictor Correlation Matrix - Pre Processed",
+         mar=c(0,0,1,0))
+corrplot(cor(box_transformation[,1:9]), 
+         method = "number", 
+         type = "upper", 
+         order = "hclust", 
+         col = brewer.pal(n=8, name="RdYlBu"),
+         title = "BoxCox Transformation Correlation Matrix",
+         mar=c(0,0,1,0))
+corrplot(cor(pca_transformation[,2:7]), 
+         method = "number", 
+         type = "upper", 
+         order = "hclust", 
+         col = brewer.pal(n=8, name="RdYlBu"),
+         title = "PCA Transformation Correlation Matrix",
+         mar=c(0,0,1,0))
+
 ####Exercise 3.2####
 data("Soybean")
 
@@ -98,6 +157,7 @@ axis(1, seq(0, 1, length.out = nrow(Soybean)), 1:nrow(Soybean), col = "white")
 
 #for missing data I would use imputation over removing predictors due to the pattern of the missing data.
 #Sections of rows are missing versus a column of data from a particular predictor.
+
 ####Exercise 3.3####
 data(BloodBrain)
 
