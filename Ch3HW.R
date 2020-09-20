@@ -23,7 +23,7 @@ clean_glass <- clean_glass %>%
     scale(center = TRUE, scale = TRUE) %>%
     as.data.frame()
 
-#to visualize the data, boxplots of each predictor will be made into one plot
+#to visualize the data, violinplots of each predictor will be made into one plot
 ri_plot <- ggplot(clean_glass, aes(x="",y=RI)) +
     geom_violin() +
     labs(x = "RI", y = "Values")
@@ -92,15 +92,14 @@ ggpairs(dirty_glass,
         upper = list(continuous='blank'),
         legend=1,
         title = "Data Before Transformations")
-ggplot(box_transformation, aes(x=Al, y=Si)) +
-    ggpairs(box_transformation, 
-            columns = 1:9,
-            ggplot2::aes(color = type),
-            upper = list(continuous='blank'),
-            legend=1,
-            title = "BoxCox Transformation")
+ggpairs(box_transformation, 
+        columns = 1:9,
+        ggplot2::aes(color = type),
+        upper = list(continuous='blank'),
+        legend=1,
+        title = "BoxCox Transformation")
 ggpairs(pca_transformation, 
-        columns = 2:7,
+        columns = 1:6,
         ggplot2::aes(color = type),
         upper = list(continuous='blank'),
         legend=1,
@@ -120,7 +119,7 @@ corrplot(cor(box_transformation[,1:9]),
          col = brewer.pal(n=8, name="RdYlBu"),
          title = "BoxCox Transformation Correlation Matrix",
          mar=c(0,0,1,0))
-corrplot(cor(pca_transformation[,2:7]), 
+corrplot(cor(pca_transformation[,1:6]), 
          method = "number", 
          type = "upper", 
          order = "hclust", 
