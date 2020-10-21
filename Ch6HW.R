@@ -45,6 +45,7 @@ defaultSummary(lmValues1)
 data(permeability)
 ?permeability
 
+fingerprints <- as.data.frame(fingerprints)
 #fingerprints - matrix of binary fingerprint indicator variables
 #permeability - permeability values for each compound
 
@@ -52,3 +53,22 @@ remove <- nearZeroVar(fingerprints)
 fingers <- fingerprints[,-remove]
 #388 predictors left for modeling
 
+fingers$permeability <- permeability
+trainingRows <- createDataPartition(fingers[,1], p=0.80, list=FALSE)
+
+training <- fingers[trainingRows,]
+testing <- fingers[-trainingRows,]
+
+ctrl <- trainControl(method = "cv", number = 10)
+plsTune <- train(permeability ~ ., data = training, method = "pls", tuneLength = 20, 
+                 trControl = ctrl, preProc = c("center", "scale"))
+plsTune
+plot(plsTune)
+
+xTest <- testing[,1:388]
+
+predicted<-predict(plsTune, xTest)
+lmValues2 <- data.frame(obs = testing[,389], pred = predicted)
+colnames(lmValues2) <- c("obs", "pred")
+
+defaultSummary(lmValues2)
