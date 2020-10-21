@@ -1,6 +1,8 @@
 library(AppliedPredictiveModeling)
 library(caret)
-libray(e1071)
+library(e1071)
+library(MASS)
+library(pls)
 library(tidyverse)
 
 ####6.1####
@@ -8,24 +10,35 @@ library(tidyverse)
 data(tecator)
 ?tecator
 
+absorp <- as.data.frame(absorp)
+endpoints <- as.data.frame(endpoints)
 #absorp - absorbance data
 #endpoints - percentages of water, fat, protein (cols 1-3)
 
-colnames(absorp) <- c(1:100)
 pca_absorp <- predict(preProcess(absorp, method = c("center", "scale", "pca")), absorp) #default cutoff is 95%
 
-#make: screeplot
+pca_prePlot <- prcomp(absorp, scale = TRUE, center = TRUE)
+screeplot(pca_prePlot, type = c("lines"))
 
 #dimensions after pca: 215 x 2
 
-trainingRows <- createDataPartition(absorp[,1], p=0.80, list=FALSE)
-testingRows <- createDataPartition(absorp[,1], p=0.20, list=FALSE)
+preSplit <- data.frame(PCA = pca_absorp[,1], Fat = endpoints[,2])
+preSplit <- prcomp(preSplit, scale = TRUE, center = TRUE)
+trainingRows <- createDataPartition(preSplit[,1], p=0.80, list=FALSE)
 
-training <- absorp[trainingRows,]
-testing <- absorp[testingRows,]
+training <- preSplit[trainingRows,]
+testing <- preSplit[-trainingRows,]
 
+ctrl <- trainControl(method = "cv", number = 3)
+lmFit1 <- train(Fat ~ PCA, data = training, method = "lm", trControl = ctrl)
+lmFit1
 
-#?RMSE
+#an attempt to make errors go AWAY
+PCA <- testing[,1]
+
+lmPred1 <- predict(lmFit1, testing[,1])
+lmValues1 <- data.frame(obs = testing$Fat, pred = lmPred1)
+defaultSummary(lmValues1)
 
 ####6.2####
 
