@@ -8,9 +8,9 @@ library(pls)
 library(RANN)
 library(tidyverse)
 
-set.seed(100)
-
 ####6.1####
+
+set.seed(80)
 
 data(tecator)
 ?tecator
@@ -48,6 +48,8 @@ defaultSummary(lmValues1)
 
 ####6.2####
 
+set.seed(80)
+
 data(permeability)
 ?permeability
 
@@ -80,6 +82,8 @@ colnames(lmValues2) <- c("obs", "pred")
 defaultSummary(lmValues2)
 
 ####6.3####
+
+set.seed(80)
 
 data(ChemicalManufacturingProcess)
 ?ChemicalManufacturingProcess
