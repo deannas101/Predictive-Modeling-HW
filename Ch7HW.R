@@ -169,3 +169,9 @@ predicted <- predict(knnFit, xTest)
 knnValues <- data.frame(obs = imputedManufacturing[,1], pred = predicted)
 
 defaultSummary(knnValues)
+
+#best model lowest RMSE: nn
+
+nnImp <- varImp(nnFit, scale = FALSE)
+nnImp
+plot(nnImp, top = 20)
