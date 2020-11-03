@@ -79,7 +79,8 @@ knnPred <- predict(knnModel, newdata = testData$x)
 postResample(pred = knnPred, obs = testData$y)
 
 marsGrid <- expand.grid(.degree = 1:2, .nprune = 2:50)
-marsModel <- train(x = trainingData$x, y = trainingData$y, method = "earth", tuneGrid = marsGrid, trControl = trainControl(method = "cv"))
+marsModel <- train(x = trainingData$x, y = trainingData$y, 
+                   method = "earth", tuneGrid = marsGrid, trControl = trainControl(method = "cv"))
 marsModel
 marsPred <- predict(marsModel, newdata = testData$x)
 postResample(pred = marsPred, obs = testData$y)
@@ -104,12 +105,28 @@ trainingRows <- createDataPartition(imputedManufacturing[,1], p=0.80, list=FALSE
 training <- imputedManufacturing[trainingRows,]
 testing <- imputedManufacturing[-trainingRows,]
 
-ctrl <- trainControl(method = "cv", number = 3)
+ctrl <- trainControl(method = "cv", number = 10)
 xTest <- imputedManufacturing[,2:58]
 
 #Neural Network
 
-nnFit <- train()
+tooHigh <- findCorrelation(cor(training), cutoff = .75)
+trainXnnet <- training[, -tooHigh]
+testXnnet <- testing[, -tooHigh]
+zeroVar <- nearZeroVar(trainXnnet)
+trainXnnet <- trainXnnet[, -zeroVar]
+testXnnet <- testXnnet[, -zeroVar]
+
+nnetGrid <- expand.grid(.decay = c(0, 0.01, .1), .size = c(1:10), .bag = FALSE)
+nnFit <- train(Yield ~ ., data = trainXnnet,
+               method = "avNNet", 
+               tuneGrid = nnetGrid,
+               trControl = ctrl,
+               preProc = c("center", "scale"),
+               linout = TRUE, 
+               trace = FALSE,
+               MaxNWts = 10 * (ncol(trainXnnet) + 1) + 10 + 1,
+               maxit = 500)
 predicted <- predict(nnFit, xTest)
 nnValues <- data.frame(obs = imputedManufacturing[,1], pred = predicted)
 
@@ -117,15 +134,24 @@ defaultSummary(nnValues)
 
 #MARS
 
-marsFit <- train()
+marsGrid <- expand.grid(.degree = 1:2, .nprune = 2:50)
+marsFit <- train(Yield ~ ., data = trainXnnet,
+                 method = "earth",
+                 tuneGrid = marsGrid,
+                 trControl = trainControl(method = "cv"))
 predicted <- predict(marsFit, xTest)
 marsValues <- data.frame(obs = imputedManufacturing[,1], pred = predicted)
+colnames(marsValues) <- c("obs", "pred")
 
-defaultSummary(marsValues)
+defaultSummary(marsValues) #not working
 
 #SVM
 
-svmFit <- train()
+svmFit <- train(Yield ~ ., data = trainXnnet,
+                method = "svmRadial",
+                preProc = c("center", "scale"),
+                tuneLength = 14,
+                trControl = trainControl(method = "cv"))
 predicted <- predict(svmFit, xTest)
 svmValues <- data.frame(obs = imputedManufacturing[,1], pred = predicted)
 
@@ -133,7 +159,12 @@ defaultSummary(svmValues)
 
 #KNN
 
-knnFit <- train()
+knnDescr <- training[, -nearZeroVar(training)]
+knnFit <- train(Yield ~ ., data = knnDescr,
+                method = "knn",
+                preProc = c("center", "scale"),
+                tuneGrid = data.frame(.k = 1:20),
+                trControl = trainControl(method = "cv"))
 predicted <- predict(knnFit, xTest)
 knnValues <- data.frame(obs = imputedManufacturing[,1], pred = predicted)
 
