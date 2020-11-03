@@ -109,8 +109,32 @@ xTest <- imputedManufacturing[,2:58]
 
 #Neural Network
 
+nnFit <- train()
+predicted <- predict(nnFit, xTest)
+nnValues <- data.frame(obs = imputedManufacturing[,1], pred = predicted)
+
+defaultSummary(nnValues)
+
 #MARS
+
+marsFit <- train()
+predicted <- predict(marsFit, xTest)
+marsValues <- data.frame(obs = imputedManufacturing[,1], pred = predicted)
+
+defaultSummary(marsValues)
 
 #SVM
 
+svmFit <- train()
+predicted <- predict(svmFit, xTest)
+svmValues <- data.frame(obs = imputedManufacturing[,1], pred = predicted)
+
+defaultSummary(svmValues)
+
 #KNN
+
+knnFit <- train()
+predicted <- predict(knnFit, xTest)
+knnValues <- data.frame(obs = imputedManufacturing[,1], pred = predicted)
+
+defaultSummary(knnValues)
