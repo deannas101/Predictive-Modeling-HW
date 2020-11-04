@@ -21,46 +21,46 @@ dataGrid <- data.frame(x = seq(2, 10, length = 100))
 #example
 rbfSVM <- ksvm(x = x, y = y, data = sinData, kernel ="rbfdot", kpar = "automatic", C = 1, epsilon = 0.1)
 modelPrediction <- predict(rbfSVM, newdata = dataGrid)
-plot(x, y)
+plot(x, y, main = "SVM C = 1, e = 0.1, sigma = auto")
 points(x = dataGrid$x, y = modelPrediction[,1], type = "l", col = "blue")
 
 #constant C, change epsilon
 rbfSVM <- ksvm(x = x, y = y, data = sinData, kernel ="rbfdot", kpar = "automatic", C = 1, epsilon = 1)
 modelPrediction <- predict(rbfSVM, newdata = dataGrid)
-plot(x, y)
+plot(x, y, main = "SVM C = 1, e = 1, sigma = auto")
 points(x = dataGrid$x, y = modelPrediction[,1], type = "l", col = "blue")
 
-rbfSVM <- ksvm(x = x, y = y, data = sinData, kernel ="rbfdot", kpar = "automatic", C = 1, epsilon = 10)
+rbfSVM <- ksvm(x = x, y = y, data = sinData, kernel ="rbfdot", kpar = "automatic", C = 1, epsilon = 0.01)
 modelPrediction <- predict(rbfSVM, newdata = dataGrid)
-plot(x, y)
+plot(x, y, main = "SVM C = 1, e = 0.01, sigma = auto")
 points(x = dataGrid$x, y = modelPrediction[,1], type = "l", col = "blue")
 
 #change C, constant epsilon
 rbfSVM <- ksvm(x = x, y = y, data = sinData, kernel ="rbfdot", kpar = "automatic", C = 10, epsilon = 0.1)
 modelPrediction <- predict(rbfSVM, newdata = dataGrid)
-plot(x, y)
+plot(x, y, main = "SVM C = 10, e = 0.1, sigma = auto")
 points(x = dataGrid$x, y = modelPrediction[,1], type = "l", col = "blue")
 
 rbfSVM <- ksvm(x = x, y = y, data = sinData, kernel ="rbfdot", kpar = "automatic", C = 0.1, epsilon = 0.1)
 modelPrediction <- predict(rbfSVM, newdata = dataGrid)
-plot(x, y)
+plot(x, y, main = "SVM C = 0.1, e = 0.1, sigma = auto")
 points(x = dataGrid$x, y = modelPrediction[,1], type = "l", col = "blue")
 
 ####7.1b####
 
 rbfSVM <- ksvm(x = x, y = y, data = sinData, kernel ="rbfdot", kpar = list(sigma = 1), C = 1, epsilon = 0.1)
 modelPrediction <- predict(rbfSVM, newdata = dataGrid)
-plot(x, y)
+plot(x, y, main = "SVM C = 1, e = 0.1, sigma = 1")
 points(x = dataGrid$x, y = modelPrediction[,1], type = "l", col = "blue")
 
 rbfSVM <- ksvm(x = x, y = y, data = sinData, kernel ="rbfdot", kpar = list(sigma = 0.1), C = 1, epsilon = 0.1)
 modelPrediction <- predict(rbfSVM, newdata = dataGrid)
-plot(x, y)
+plot(x, y, main = "SVM C = 1, e = 0.1, sigma = 0.1")
 points(x = dataGrid$x, y = modelPrediction[,1], type = "l", col = "blue")
 
 rbfSVM <- ksvm(x = x, y = y, data = sinData, kernel ="rbfdot", kpar = list(sigma = 10), C = 1, epsilon = 0.1)
 modelPrediction <- predict(rbfSVM, newdata = dataGrid)
-plot(x, y)
+plot(x, y, main = "SVM C = 1, e = 0.1, sigma = 10")
 points(x = dataGrid$x, y = modelPrediction[,1], type = "l", col = "blue")
 
 ####7.2####
@@ -85,7 +85,7 @@ marsModel
 marsPred <- predict(marsModel, newdata = testData$x)
 postResample(pred = marsPred, obs = testData$y)
 
-varImp(marsModel)
+plot(varImp(marsModel), top = 5)
 
 ####7.5####
 
@@ -127,6 +127,7 @@ nnFit <- train(Yield ~ ., data = trainXnnet,
                trace = FALSE,
                MaxNWts = 10 * (ncol(trainXnnet) + 1) + 10 + 1,
                maxit = 500)
+nnFit
 predicted <- predict(nnFit, xTest)
 nnValues <- data.frame(obs = imputedManufacturing[,1], pred = predicted)
 
@@ -139,6 +140,7 @@ marsFit <- train(Yield ~ ., data = trainXnnet,
                  method = "earth",
                  tuneGrid = marsGrid,
                  trControl = trainControl(method = "cv"))
+marsFit
 predicted <- predict(marsFit, xTest)
 marsValues <- data.frame(obs = imputedManufacturing[,1], pred = predicted)
 colnames(marsValues) <- c("obs", "pred")
@@ -152,6 +154,7 @@ svmFit <- train(Yield ~ ., data = trainXnnet,
                 preProc = c("center", "scale"),
                 tuneLength = 14,
                 trControl = trainControl(method = "cv"))
+svmFit
 predicted <- predict(svmFit, xTest)
 svmValues <- data.frame(obs = imputedManufacturing[,1], pred = predicted)
 
@@ -165,6 +168,7 @@ knnFit <- train(Yield ~ ., data = knnDescr,
                 preProc = c("center", "scale"),
                 tuneGrid = data.frame(.k = 1:20),
                 trControl = trainControl(method = "cv"))
+knnFit
 predicted <- predict(knnFit, xTest)
 knnValues <- data.frame(obs = imputedManufacturing[,1], pred = predicted)
 
@@ -174,4 +178,4 @@ defaultSummary(knnValues)
 
 nnImp <- varImp(nnFit, scale = FALSE)
 nnImp
-plot(nnImp, top = 20)
+plot(nnImp, top = 20, main = "Neural Network")

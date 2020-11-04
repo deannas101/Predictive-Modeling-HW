@@ -161,4 +161,4 @@ defaultSummary(enetValues)
 #lm has the lowest RMSE
 lmImp <- varImp(lmFit2, scale = FALSE)
 lmImp
-plot(lmImp, top = 20)
+plot(lmImp, top = 20, main= "Linear Model")
