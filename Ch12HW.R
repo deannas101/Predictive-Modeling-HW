@@ -5,6 +5,8 @@ library(MASS)
 library(pROC)
 library(tidyverse)
 
+set.seed(80)
+
 ####12.1####
 
 data(hepatic)
@@ -12,8 +14,8 @@ data(hepatic)
 #a) I would create a training and testing set by splitting the data using
 #stratified random sampling and using injury as the factor
 
-#b) I would optimize using a ROC curve since it balances sensitivity and specificity
-#to find the position where both values are maximized.
+#b) I would optimize using kappa since we have more than two levels of classes,
+#which makes using ROC ineffective.
 
 ####12.1c####
 
@@ -22,17 +24,10 @@ fullSet[,185:377] <- chem
 fullSet[, 378] <- injury
 #injury is named V378
 
-redSet <- predict(preProcess(fullSet, method=c("nzv", "corr")), fullSet)
-
 trainingRows <- createDataPartition(fullSet[,378], p=0.80, list=FALSE)
 
 fullTraining <- fullSet[trainingRows,]
 fullTesting <- fullSet[-trainingRows,]
-
-trainingRows <- createDataPartition(redSet[,238], p=0.80, list=FALSE)
-
-redTraining <- redSet[trainingRows,]
-redTesting <- redSet[-trainingRows,]
 
 #Logistic Regression
 
@@ -49,46 +44,88 @@ lrFit <- train(fullTraining[,1:377],
                 trControl = ctrl)
 
 lrFit
-summary(lrFit)
-
 confusionMatrix(data = lrFit$pred$pred,
                 reference = lrFit$pred$obs)
-
-lrRoc <- roc(response = lrFit$pred$obs,
-               predictor = lrFit$pred$None,
-               levels = rev(levels(lrFit$pred$obs)))
-plot(lrRoc, legacy.axes = TRUE)
-auc(lrRoc)
+plot(lrFit)
 
 #Linear Discriminant Analysis
 
-ldaFit <- train(redTraining[,1:237],
-                 y = redTraining$V378,
+ldaFit <- train(fullTraining[,1:377],
+                y = fullTraining$V378,
                  method = "lda",
-                 metric = "ROC",
-                 preProc = c("center", "scale"),
+                 metric = "Kappa",
+                 preProc = c("center", "scale", "nzv", "corr"),
                  trControl = ctrl)
 
 ldaFit
-summary(ldaFit)
-
 confusionMatrix(data = ldaFit$pred$pred,
                 reference = ldaFit$pred$obs)
-
-#also don't work
-ldaRoc <- roc(response = ldaFit$pred$obs,
-               predictor = ldaFit$pred$None,
-               levels = rev(levels(ldaFit$pred$obs)))
-plot(ldaRoc, legacy.axes = TRUE)
-auc(ldaRoc)
+plot(ldaFit)
 
 #Partial Least Squares Discriminant Analysis
 
+ctrl <- trainControl(summaryFunction = defaultSummary,
+                     classProbs = TRUE)
 
+plsFit <- train(fullTraining[,1:377],
+                y = fullTraining$V378,
+                 method = "pls",
+                 tuneGrid = expand.grid(.ncomp = 1:10),
+                 preProc = c("center","scale", "nzv", "corr"),
+                 metric = "Kappa",
+                 maxit = 2000,
+                 trControl = ctrl)
+
+plsFit
+
+#not working
+confusionMatrix(data = plsFit$pred$pred,
+                reference = plsFit$pred$obs)
+plot(plsFit)
 
 #Penalized Models
 
+ctrl <- trainControl(method = "LGOCV",
+                     summaryFunction = defaultSummary,
+                     classProbs = TRUE,
+                     savePredictions = TRUE)
+
+glmnGrid <- expand.grid(.alpha = c(0, .1, .2, .4, .6, .8, 1),
+                        .lambda = seq(.01, .2, length = 10))
+
+glmnFit <- train(fullTraining[,1:377],
+                   y = fullTraining$V378,
+                   method = "glmnet",
+                   tuneGrid = glmnGrid,
+                   preProc = c("center", "scale", "nzv"),
+                   metric = "Kappa",
+                   trControl = ctrl)
+
+glmnFit
+confusionMatrix(data = glmnFit$pred$pred,
+                reference = glmnFit$pred$obs)
+plot(glmnFit)
+
 #Nearest Shrunken Centroids
+
+ctrl <- trainControl(summaryFunction = defaultSummary,
+                     classProbs = TRUE)
+
+nscGrid <- data.frame(.threshold = seq(0,4, by=0.1))
+
+nscFit <- train(fullTraining[,1:377],
+                y = fullTraining$V378,
+                  method = "pam",
+                  preProc = c("center", "scale", "nzv"),
+                  tuneGrid = nscGrid,
+                  metric = "Kappa",
+                  trControl = ctrl)
+
+nscFit
+#not working
+confusionMatrix(data = nscFit$pred$pred,
+                reference = nscFit$pred$obs)
+plot(nscFit)
 
 ####12.1d####
 #edit me!
