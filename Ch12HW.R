@@ -2,6 +2,7 @@ library(AppliedPredictiveModeling)
 library(caret)
 library(glmnet)
 library(MASS)
+library(modeldata)
 library(pROC)
 library(tidyverse)
 
@@ -128,7 +129,7 @@ confusionMatrix(data = nscFit$pred$pred,
 plot(nscFit)
 
 ####12.1d####
-#edit me!
+#edit me! -> highest kappa value
 nnImp <- varImp(nnFit, scale = FALSE)
 nnImp
 plot(nnImp, top = 20, main = "Neural Network")
@@ -145,6 +146,8 @@ data(mlc_churn)
 #correlation plot
 
 pairs(cleanChurn)
+
+#12.3b: ROC should be used since the outcome has two classes.
 
 ####12.3c####
 
