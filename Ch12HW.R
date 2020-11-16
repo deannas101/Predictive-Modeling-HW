@@ -37,7 +37,7 @@ ctrl <- trainControl(method = "LGOCV",
                      savePredictions = TRUE)
 
 lrFit <- train(fullTraining[,1:184],
-                y = fullTraining$V378,
+                y = fullTraining$V185,
                 method = "multinom",
                 metric = "Accuracy",
                 preProc = c("knnImpute", "nzv"),
@@ -48,10 +48,15 @@ confusionMatrix(data = lrFit$pred$pred,
                 reference = lrFit$pred$obs)
 plot(lrFit)
 
+predicted <- predict(lrFit, fullTesting[,1:184])
+lrValues <- data.frame(obs = fullTesting[,185], pred = predicted)
+
+defaultSummary(lrValues)
+
 #Linear Discriminant Analysis
 
 ldaFit <- train(fullTraining[,1:184],
-                y = fullTraining$V378,
+                y = fullTraining$V185,
                  method = "lda",
                  metric = "Kappa",
                  preProc = c("center", "scale", "nzv", "corr"),
@@ -60,7 +65,12 @@ ldaFit <- train(fullTraining[,1:184],
 ldaFit
 confusionMatrix(data = ldaFit$pred$pred,
                 reference = ldaFit$pred$obs)
-plot(ldaFit)
+plot(ldaFit) #no tuning parameters
+
+predicted <- predict(ldaFit, fullTesting[,1:184])
+ldaValues <- data.frame(obs = fullTesting[,185], pred = predicted)
+
+defaultSummary(ldaValues)
 
 #Partial Least Squares Discriminant Analysis
 
@@ -68,7 +78,7 @@ ctrl <- trainControl(summaryFunction = defaultSummary,
                      classProbs = TRUE)
 
 plsFit <- train(fullTraining[,1:184],
-                y = fullTraining$V378,
+                y = fullTraining$V185,
                  method = "pls",
                  tuneGrid = expand.grid(.ncomp = 1:10),
                  preProc = c("center","scale", "nzv", "corr"),
@@ -83,6 +93,11 @@ confusionMatrix(data = plsFit$pred$pred,
                 reference = plsFit$pred$obs)
 plot(plsFit)
 
+predicted <- predict(plsFit, fullTesting[,1:184])
+plsValues <- data.frame(obs = fullTesting[,185], pred = predicted)
+
+defaultSummary(plsValues)
+
 #Penalized Models
 
 ctrl <- trainControl(method = "LGOCV",
@@ -94,7 +109,7 @@ glmnGrid <- expand.grid(.alpha = c(0, .1, .2, .4, .6, .8, 1),
                         .lambda = seq(.01, .2, length = 10))
 
 glmnFit <- train(fullTraining[,1:184],
-                   y = fullTraining$V378,
+                   y = fullTraining$V185,
                    method = "glmnet",
                    tuneGrid = glmnGrid,
                    preProc = c("center", "scale", "nzv"),
@@ -106,6 +121,11 @@ confusionMatrix(data = glmnFit$pred$pred,
                 reference = glmnFit$pred$obs)
 plot(glmnFit)
 
+predicted <- predict(glmnFit, fullTesting[,1:184])
+glmnValues <- data.frame(obs = fullTesting[,185], pred = predicted)
+
+defaultSummary(glmnValues)
+
 #Nearest Shrunken Centroids
 
 ctrl <- trainControl(summaryFunction = defaultSummary,
@@ -114,7 +134,7 @@ ctrl <- trainControl(summaryFunction = defaultSummary,
 nscGrid <- data.frame(.threshold = seq(0,4, by=0.1))
 
 nscFit <- train(fullTraining[,1:184],
-                y = fullTraining$V378,
+                y = fullTraining$V185,
                   method = "pam",
                   preProc = c("center", "scale", "nzv"),
                   tuneGrid = nscGrid,
@@ -127,11 +147,16 @@ confusionMatrix(data = nscFit$pred$pred,
                 reference = nscFit$pred$obs)
 plot(nscFit)
 
+predicted <- predict(nscFit, fullTesting[,1:184])
+nscValues <- data.frame(obs = fullTesting[,185], pred = predicted)
+
+defaultSummary(nscValues)
+
 ####12.1d####
-#edit me! -> highest kappa value
-nnImp <- varImp(nnFit, scale = FALSE)
-nnImp
-plot(nnImp, top = 5, main = "Neural Network")
+#highest kappa value
+plsImp <- varImp(plsFit, scale = FALSE)
+plsImp
+plot(plsImp, top = 5, main = "Partial Least Squares")
 
 ####12.3####
 
@@ -151,10 +176,16 @@ pairs(mlc_churn)
 
 ####12.3c####
 
-trainingRows <- createDataPartition(mlc_churn$churn, p=0.80, list=FALSE)
+dummRes <-dummyVars("~state+area_code+international_plan+voice_mail_plan",  data=mlc_churn, fullRank=TRUE)
+Add_dumm <- data.frame(predict(dummRes, newdata=mlc_churn))
 
-fullTraining <- mlc_churn[trainingRows,]
-fullTesting <- mlc_churn[-trainingRows,]
+full_churn <- Add_dumm
+full_churn[,54:68] <- mlc_churn[,6:20]
+
+trainingRows <- createDataPartition(full_churn$churn, p=0.80, list=FALSE)
+
+fullTraining <- full_churn[trainingRows,]
+fullTesting <- full_churn[-trainingRows,]
 
 #Logistic Regression
 
@@ -163,12 +194,13 @@ ctrl <- trainControl(method = "LGOCV",
                      classProbs = TRUE,
                      savePredictions = TRUE)
 
-lrFit <- train(fullTraining[,1:19],
+lrFit <- train(fullTraining[,1:67],
                 y = fullTraining$churn,
                 method = "glm",
                 metric = "ROC",
                 trControl = ctrl)
 
+lrFit
 confusionMatrix(data = lrFit$pred$pred,
                 reference = lrFit$pred$obs)
 
@@ -178,15 +210,20 @@ lrRoc <- roc(response = lrFit$pred$obs,
 plot(lrRoc, legacy.axes = TRUE)
 auc(lrRoc)
 
+predicted <- predict(lrFit, fullTesting[,1:67])
+lrValues <- data.frame(obs = fullTesting[,68], pred = predicted)
+
+defaultSummary(lrValues)
+
 #Linear Discriminant Analysis
 
-#not working
-ldaFit <- train(x = fullTraining[,1:19],
+ldaFit <- train(x = fullTraining[,1:67],
                 y = fullTraining$churn,
                  method = "lda",
                  metric = "ROC",
                  trControl = ctrl)
 
+ldaFit
 confusionMatrix(data = ldaFit$pred$pred,
                 reference = ldaFit$pred$obs)
 
@@ -196,20 +233,26 @@ ldaRoc <- roc(response = ldaFit$pred$obs,
 plot(ldaRoc, legacy.axes = TRUE)
 auc(ldaRoc)
 
+predicted <- predict(ldaFit, fullTesting[,1:67])
+ldaValues <- data.frame(obs = fullTesting[,68], pred = predicted)
+
+defaultSummary(ldaValues)
+
 #Partial Least Squares
 
 ctrl <- trainControl(summaryFunction = twoClassSummary,
                      classProbs = TRUE)
 
-#not working
-plsFit <- train(fullTraining[,1:19],
+plsFit <- train(fullTraining[,1:67],
                 y = fullTraining$churn,
                  method = "pls",
                  tuneGrid = expand.grid(.ncomp = 1:10),
                  preProc = c("center","scale"),
                  metric = "ROC",
+                 maxit = 2000,
                  trControl = ctrl)
 
+plsFit
 confusionMatrix(data = plsFit$pred$pred,
                 reference = plsFit$pred$obs)
 
@@ -218,6 +261,11 @@ plsRoc <- roc(response = plsFit$pred$obs,
               levels = rev(levels(plsFit$pred$obs)))
 plot(plsRoc, legacy.axes = TRUE)
 auc(plsRoc)
+
+predicted <- predict(plsFit, fullTesting[,1:67])
+plsValues <- data.frame(obs = fullTesting[,68], pred = predicted)
+
+defaultSummary(plsValues)
 
 #Penalized Models
 
@@ -229,8 +277,7 @@ ctrl <- trainControl(method = "LGOCV",
 glmnGrid <- expand.grid(.alpha = c(0, .1, .2, .4, .6, .8, 1),
                         .lambda = seq(.01, .2, length = 10))
 
-#not working
-glmnFit <- train(fullTraining[,1:19],
+glmnFit <- train(fullTraining[,1:67],
                  y = fullTraining$churn,
                    method = "glmnet",
                    tuneGrid = glmnGrid,
@@ -238,6 +285,7 @@ glmnFit <- train(fullTraining[,1:19],
                    metric = "ROC",
                    trControl = ctrl)
 
+glmnFit
 confusionMatrix(data = glmnFit$pred$pred,
                 reference = glmnFit$pred$obs)
 
@@ -247,6 +295,11 @@ glmnRoc <- roc(response = glmnFit$pred$obs,
 plot(glmnRoc, legacy.axes = TRUE)
 auc(glmnRoc)
 
+predicted <- predict(glmnFit, fullTesting[,1:67])
+glmnValues <- data.frame(obs = fullTesting[,68], pred = predicted)
+
+defaultSummary(glmnValues)
+
 #Nearest Shrunken Centroids
 
 ctrl <- trainControl(summaryFunction = twoClassSummary,
@@ -254,7 +307,7 @@ ctrl <- trainControl(summaryFunction = twoClassSummary,
 
 nscGrid <- data.frame(.threshold = seq(0,4, by=0.1))
 
-nscFit <- train(x = fullTraining[,1:19],
+nscFit <- train(x = fullTraining[,1:67],
                 y = fullTraining$churn,
                   method = "pam",
                   preProc = c("center", "scale"),
@@ -262,6 +315,7 @@ nscFit <- train(x = fullTraining[,1:19],
                   metric = "ROC",
                   trControl = ctrl)
 
+nscFit
 confusionMatrix(data = nscFit$pred$pred,
                 reference = nscFit$pred$obs)
 
@@ -270,3 +324,8 @@ nscRoc <- roc(response = nscFit$pred$obs,
                levels = rev(levels(nscFit$pred$obs)))
 plot(nscRoc, legacy.axes = TRUE)
 auc(nscRoc)
+
+predicted <- predict(nscFit, fullTesting[,1:67])
+nscValues <- data.frame(obs = fullTesting[,68], pred = predicted)
+
+defaultSummary(nscValues)
