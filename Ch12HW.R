@@ -75,7 +75,8 @@ defaultSummary(ldaValues)
 #Partial Least Squares Discriminant Analysis
 
 ctrl <- trainControl(summaryFunction = defaultSummary,
-                     classProbs = TRUE)
+                     classProbs = TRUE,
+                     savePredictions = TRUE)
 
 plsFit <- train(fullTraining[,1:184],
                 y = fullTraining$V185,
@@ -87,8 +88,6 @@ plsFit <- train(fullTraining[,1:184],
                  trControl = ctrl)
 
 plsFit
-
-#not working
 confusionMatrix(data = plsFit$pred$pred,
                 reference = plsFit$pred$obs)
 plot(plsFit)
@@ -129,7 +128,8 @@ defaultSummary(glmnValues)
 #Nearest Shrunken Centroids
 
 ctrl <- trainControl(summaryFunction = defaultSummary,
-                     classProbs = TRUE)
+                     classProbs = TRUE,
+                     savePredictions = TRUE)
 
 nscGrid <- data.frame(.threshold = seq(0,4, by=0.1))
 
@@ -142,7 +142,6 @@ nscFit <- train(fullTraining[,1:184],
                   trControl = ctrl)
 
 nscFit
-#not working
 confusionMatrix(data = nscFit$pred$pred,
                 reference = nscFit$pred$obs)
 plot(nscFit)
@@ -171,6 +170,27 @@ mlc_churn <- as.data.frame(mlc_churn)
 #outcome: churn, yes/no
 
 pairs(mlc_churn)
+
+par(mfrow=c(3,3))
+plot(churn~state, data = mlc_churn)
+plot(churn~account_length, data = mlc_churn)
+plot(churn~area_code, data = mlc_churn)
+plot(churn~international_plan, data = mlc_churn)
+plot(churn~voice_mail_plan, data = mlc_churn)
+plot(churn~number_vmail_messages, data = mlc_churn)
+plot(churn~total_day_minutes, data = mlc_churn)
+plot(churn~total_day_calls, data = mlc_churn)
+plot(churn~total_day_charge, data = mlc_churn)
+plot(churn~total_eve_minutes, data = mlc_churn)
+plot(churn~total_eve_calls, data = mlc_churn)
+plot(churn~total_eve_charge, data =mlc_churn)
+plot(churn~total_night_minutes, data = mlc_churn)
+plot(churn~total_night_calls, data = mlc_churn)
+plot(churn~total_night_charge, data = mlc_churn)
+plot(churn~total_intl_minutes, data = mlc_churn)
+plot(churn~total_intl_calls, data = mlc_churn)
+plot(churn~total_intl_charge, data = mlc_churn)
+plot(churn~number_customer_service_calls, data = mlc_churn)
 
 #12.3b: ROC should be used since the outcome has two classes.
 
@@ -241,7 +261,8 @@ defaultSummary(ldaValues)
 #Partial Least Squares
 
 ctrl <- trainControl(summaryFunction = twoClassSummary,
-                     classProbs = TRUE)
+                     classProbs = TRUE,
+                     savePredictions = TRUE)
 
 plsFit <- train(fullTraining[,1:67],
                 y = fullTraining$churn,
@@ -251,7 +272,7 @@ plsFit <- train(fullTraining[,1:67],
                  metric = "ROC",
                  trControl = ctrl)
 
-plsFit #not working
+plsFit
 confusionMatrix(data = plsFit$pred$pred,
                 reference = plsFit$pred$obs)
 
@@ -302,7 +323,8 @@ defaultSummary(glmnValues)
 #Nearest Shrunken Centroids
 
 ctrl <- trainControl(summaryFunction = twoClassSummary,
-                     classProbs = TRUE)
+                     classProbs = TRUE,
+                     savePredictions = TRUE)
 
 nscGrid <- data.frame(.threshold = seq(0,4, by=0.1))
 
@@ -314,7 +336,7 @@ nscFit <- train(x = fullTraining[,1:67],
                   metric = "ROC",
                   trControl = ctrl)
 
-nscFit #not working
+nscFit
 confusionMatrix(data = nscFit$pred$pred,
                 reference = nscFit$pred$obs)
 
