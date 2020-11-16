@@ -249,10 +249,9 @@ plsFit <- train(fullTraining[,1:67],
                  tuneGrid = expand.grid(.ncomp = 1:10),
                  preProc = c("center","scale"),
                  metric = "ROC",
-                 maxit = 2000,
                  trControl = ctrl)
 
-plsFit
+plsFit #not working
 confusionMatrix(data = plsFit$pred$pred,
                 reference = plsFit$pred$obs)
 
@@ -315,7 +314,7 @@ nscFit <- train(x = fullTraining[,1:67],
                   metric = "ROC",
                   trControl = ctrl)
 
-nscFit
+nscFit #not working
 confusionMatrix(data = nscFit$pred$pred,
                 reference = nscFit$pred$obs)
 
